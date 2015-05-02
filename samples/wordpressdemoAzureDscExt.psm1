@@ -1,4 +1,4 @@
-# This configuration configures a Basic WordPress Site
+ï»¿# This configuration configures a Basic WordPress Site
 # It requires xPhp, xMySql, xWordPress, and xWebAdministration
 # Please review the note about the FQDN variable and
 # about the URLs, they may need to be updated.
@@ -8,8 +8,6 @@
 # or this does not resolve to the correct FQDN for the machine
 # Update this to the FQDN of the target machine
 # **************************
-[string] $fqdn = [System.Net.Dns]::GetHostByName(($env:computerName)).HostName
-Write-Host "Target Machine FQDN: $fqdn"
 
 [string] $role = 'WordPress'
 $dataRoot = Split-Path $MyInvocation.MyCommand.Path
@@ -22,12 +20,8 @@ if (-not (Test-Path $WordPressTemplatePath))
     throw $message
 }
 $plainPassword = 'pass@word1'
-$pwd = convertTo-SecureString -String $plainPassword -AsPlainText -Force
 $WordPressUserName = 'WordPressUser'
 $WordPressDatabase = 'WordPress'
-$Admin = New-Object -TypeName System.Management.Automation.PSCredential -argumentlist ('DscAdmin',$pwd)
-$User = New-Object -TypeName System.Management.Automation.PSCredential -argumentlist ($WordPressUserName,$pwd)  
-$Credential = New-Object -TypeName System.Management.Automation.PSCredential -argumentlist ('userNameNotUsed',$pwd) #the password for root. no user name is needed as MySql installer is using only the user "root".
 
 # Generate the contents of the WordPress configuration
 $wordPressConfig = & $WordPressTemplatePath -WordPressDatabase $WordPressDatabase -WordPressUserName $WordPressUserName -PlainPassword $plainPassword
@@ -37,44 +31,7 @@ $wordPressConfig = & $WordPressTemplatePath -WordPressDatabase $WordPressDatabas
 # the WordPress and VC Redist URL change less frequently, but should still be verified.
 # After verifying the download URLs for the products and update them appropriately.
 # **************************
-$configurationData = @{  
-    AllNodes = @(        
-        @{
-            Role = $role
-            NodeName = $fqdn
-            PSDscAllowPlainTextPassword = $true;
 
-            WordPress = @{
-                Title = "DSC WordPress Site Title"
-                Admin = New-Object -TypeName System.Management.Automation.PSCredential -argumentlist (“DscAdmin”,$pwd)
-                Email = "dscadmin@contoso.com"
-                Uri = "http://$fqdn"
-                DownloadURI = "http://WordPress.org/latest.zip"
-                Path = (Join-Path $env:SystemDrive  "wwwWordPress")
-                Config = $wordPressConfig
-                SiteName = "WordPress"
-                TemplatePath = $WordPressTemplatePath  
-                UserName = $WordPressUserName
-                Database = $WordPressDatabase
-                User = New-Object -TypeName System.Management.Automation.PSCredential -argumentlist (“$WordPressUserName”,$pwd)  
-            }    
-            
-            Php = @{
-                # Update with the latest "VC11 x64 Non Thread Safe" from http://windows.php.net/download/
-                DownloadURI = "http://windows.php.net/downloads/releases/php-5.6.8-nts-Win32-VC11-x64.zip"
-                TemplatePath = $phpTemplatePath 
-                Path = "$env:SystemDrive\php"
-                Vc2012RedistUri = "http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
-            }
-
-            PackageFolder = "$env:SystemDrive\packages"
-            MySqlDownloadURI = "http://dev.mysql.com/get/Downloads/MySQLInstaller/mysql-installer-community-5.6.17.0.msi"
-            Credential = New-Object -TypeName System.Management.Automation.PSCredential -argumentlist (“userNameNotUsed”,$pwd) #the password for root. no user name is needed as MySql installer is using only the user "root".
-            PlainPassword = $plainPassword
-            
-         }
-    )  
-}
 
 # Configuration to configure a Single machine WordPress Site
 Configuration WordPress
@@ -152,11 +109,4 @@ Configuration WordPress
     }
 }
 
-
-$outputFolder = "$env:USERPROFILE\Desktop\WordPress"
-Wordpress -OutputPath $outputFolder -ConfigurationData $configurationData -Admin $Admin -wordPressUser $User -Credential $Credential -fqdn $fqdn
-
-Set-DscLocalConfigurationManager -path $outputFolder -verbose
-
-Start-DscConfiguration -Wait -Verbose -path $outputFolder
 
