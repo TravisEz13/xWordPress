@@ -50,7 +50,7 @@ define('NONCE_SALT',       '31NY);q.~W[K},#1>z9}AU:(Jh?Tm-l1Zo))b@`{Ho,j)tuK)|=2
 /* WordPress Localized Language. */
 define( 'WPLANG', '' );
 
-
+define('WP_MEMORY_LIMIT', '256M');
 
 
 /* Media Trash. */

@@ -53,13 +53,23 @@ configuration xIisWordPressSite
                 DefaultPage = @("index.php") 
                 DependsOn = @("[File]WordPressFolder","[xWebSite]DefaultIisSite")
             }
-
-            $WordPressZip = Join-Path $PackageFolder "WordPress.zip"
-            # Make sure the WordPress archive is in the package folder
-            xRemoteFile WordPressArchive 
+            
+            $wordpressDependsOn = @("[File]WordPressFolder")
+            if( ([uri] $DownloadUri).Scheme -ne 'file')
             {
-                Uri = $DownloadUri
-                DestinationPath = $WordPressZip
+
+                $WordPressZip = Join-Path $PackageFolder "WordPress.zip"
+                # Make sure the WordPress archive is in the package folder
+                xRemoteFile WordPressArchive 
+                {
+                    Uri = $DownloadUri
+                    DestinationPath = $WordPressZip
+                }
+                $wordpressDependsOn += "[xRemoteFile]WordPressArchive"
+            }
+            else
+            {
+                $WordPressZip = $DownloadUri
             }
 
             # Make sure the WordPress archive contents are in the WordPress root folder
@@ -67,7 +77,7 @@ configuration xIisWordPressSite
             {
                 Path = $WordPressZip
                 Destination = $DestinationPath
-                DependsOn = @("[xRemoteFile]WordPressArchive","[File]WordPressFolder")
+                DependsOn = $wordpressDependsOn
             }
             
             # Make sure the WordPress configuration file is present
@@ -79,6 +89,4 @@ configuration xIisWordPressSite
                 MatchSource = $true
             }
 }
-
-
 
