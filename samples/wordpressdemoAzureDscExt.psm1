@@ -40,7 +40,8 @@ Configuration WordPress
         [pscredential] $admin,
         [pscredential] $wordPressUser,
         [pscredential] $credential,
-        [string] $fqdn
+        [string] $fqdn,
+        [switch] $skipWordpress
 
     )
     # Import composite resources
@@ -67,6 +68,7 @@ Configuration WordPress
             DestinationPath = $ExecutionContext.InvokeCommand.ExpandString($Node.Php.Path)
             ConfigurationPath = $ExecutionContext.InvokeCommand.ExpandString($Node.Php.TemplatePath)
             Vc2012RedistDownloadUri = $ExecutionContext.InvokeCommand.ExpandString($Node.Php.Vc2012RedistUri)
+            DependsOn = '[File]PackagesFolder'
         }
 
 
@@ -78,25 +80,32 @@ Configuration WordPress
             RootCredential = $credential
             DatabaseName = 'WordPress'
             UserCredential =  $wordPressUser
+            DependsOn = '[xPhpProvision]php'
         }
-    
-        # Make sure the IIS site for WordPress is created
-        # Note, you still need to create the actuall WordPress Site after this.
-        xIisWordPressSite iisWordPressSite
+        
+        if(!$skipWordpress)
         {
-            DestinationPath = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.Path)
-            DownloadUri = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.DownloadURI)
-            PackageFolder = $ExecutionContext.InvokeCommand.ExpandString($Node.PackageFolder)
-            Configuration = $WordPressConfig
-        }
+            # Make sure the IIS site for WordPress is created
+            # Note, you still need to create the actuall WordPress Site after this.
+            xIisWordPressSite iisWordPressSite
+            {
+                DestinationPath = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.Path)
+                DownloadUri = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.DownloadURI)
+                PackageFolder = $ExecutionContext.InvokeCommand.ExpandString($Node.PackageFolder)
+                Configuration = $WordPressConfig
+                DependsOn = '[xMySqlProvision]mySql'
+            }
 
-        # Make sure the WordPress site is present
-        xWordPressSite WordPressSite
-        {
-            Uri = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.Uri)
-            Title = $Node.WordPress.Title
-            AdministratorCredential = $Admin
-            AdministratorEmail = $Node.WordPress.Email
+        
+            # Make sure the WordPress site is present
+            xWordPressSite WordPressSite
+            {
+                Uri = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.Uri)
+                Title = $Node.WordPress.Title
+                AdministratorCredential = $Admin
+                AdministratorEmail = $Node.WordPress.Email
+                DependsOn = '[xIisWordPressSite]iisWordPressSite'
+            }
         } 
 
         # Make sure LCM will reboot if needed
