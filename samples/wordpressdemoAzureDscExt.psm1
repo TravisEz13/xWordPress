@@ -68,7 +68,6 @@ Configuration WordPress
             DestinationPath = $ExecutionContext.InvokeCommand.ExpandString($Node.Php.Path)
             ConfigurationPath = $ExecutionContext.InvokeCommand.ExpandString($Node.Php.TemplatePath)
             Vc2012RedistDownloadUri = $ExecutionContext.InvokeCommand.ExpandString($Node.Php.Vc2012RedistUri)
-            DependsOn = '[File]PackagesFolder'
         }
 
 
@@ -80,7 +79,6 @@ Configuration WordPress
             RootCredential = $credential
             DatabaseName = 'WordPress'
             UserCredential =  $wordPressUser
-            DependsOn = '[xPhpProvision]php'
         }
         
         if(!$skipWordpress)
@@ -93,7 +91,6 @@ Configuration WordPress
                 DownloadUri = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.DownloadURI)
                 PackageFolder = $ExecutionContext.InvokeCommand.ExpandString($Node.PackageFolder)
                 Configuration = $WordPressConfig
-                DependsOn = '[xMySqlProvision]mySql'
             }
 
         
@@ -104,7 +101,6 @@ Configuration WordPress
                 Title = $Node.WordPress.Title
                 AdministratorCredential = $Admin
                 AdministratorEmail = $Node.WordPress.Email
-                DependsOn = '[xIisWordPressSite]iisWordPressSite'
             }
         } 
 

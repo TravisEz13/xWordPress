@@ -17,14 +17,14 @@ configuration xIisWordPressSite
         [string] $Configuration
     )
 
-        [string] $BinaryFolder = Join-Path $DestinationPath "WordPress"
+        [string] $BinaryFolder = Join-Path $DestinationPath 'WordPress'
 
             # Make sure the WordPress site folder is present
             File WordPressFolder
             {
                 DestinationPath = $BinaryFolder
-                Type = "Directory"
-                Ensure = "Present"
+                Type = 'Directory'
+                Ensure = 'Present'
 
             }
 
@@ -32,13 +32,13 @@ configuration xIisWordPressSite
             # Should be removed once WordPress site launches by it is own URL and not using iis default url
             xWebSite DefaultIisSite
             {
-                Name = "Default Web Site"
+                Name = 'Default Web Site'
                 PhysicalPath = "$env:SystemDrive\inetpub\wwwroot"
-                Ensure = "Present"
-                State = "Started"
+                Ensure = 'Present'
+                State = 'Started'
                 BindingInfo     = MSFT_xWebBindingInformation 
                             { 
-                            Protocol              = "HTTP" 
+                            Protocol              = 'HTTP' 
                             Port                  = 9090 
                             } 
             }
@@ -46,26 +46,26 @@ configuration xIisWordPressSite
             # Make sure the WordPress Iis site is present
             xWebSite WordPressIisSite
             {
-                Name = "WordPress"
+                Name = 'WordPress'
                 PhysicalPath = $BinaryFolder
-                Ensure = "Present"
-                State = "Started"
-                DefaultPage = @("index.php") 
-                DependsOn = @("[File]WordPressFolder","[xWebSite]DefaultIisSite")
+                Ensure = 'Present'
+                State = 'Started'
+                DefaultPage = @('index.php') 
+                DependsOn = @('[File]WordPressFolder','[xWebSite]DefaultIisSite')
             }
             
-            $wordpressDependsOn = @("[File]WordPressFolder")
+            $wordpressDependsOn = @('[File]WordPressFolder')
             if( ([uri] $DownloadUri).Scheme -ne 'file')
             {
 
-                $WordPressZip = Join-Path $PackageFolder "WordPress.zip"
+                $WordPressZip = Join-Path $PackageFolder 'WordPress.zip'
                 # Make sure the WordPress archive is in the package folder
                 xRemoteFile WordPressArchive 
                 {
                     Uri = $DownloadUri
                     DestinationPath = $WordPressZip
                 }
-                $wordpressDependsOn += "[xRemoteFile]WordPressArchive"
+                $wordpressDependsOn += '[xRemoteFile]WordPressArchive'
             }
             else
             {
@@ -84,8 +84,8 @@ configuration xIisWordPressSite
             File WordPressConfig
             {
                 Contents = $Configuration
-                DestinationPath = (Join-Path $BinaryFolder "wp-config.php")
-                DependsOn = @("[xArchive]WordPress")
+                DestinationPath = (Join-Path $BinaryFolder 'wp-config.php')
+                DependsOn = @('[xArchive]WordPress')
                 MatchSource = $true
             }
 }
