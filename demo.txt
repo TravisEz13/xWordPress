@@ -16,7 +16,7 @@ powershell_ise.exe  .\samples\wordpressdemoAzureDscExt.psm1
 $vm = Get-AzureDemoVm 
 
 # Open the web site
-Start-Process "$($vm.DNSName)"
+Write-Host "$($vm.DNSName)"
 
 # Update the vm with the DSC Configuration
 Update-AzureDemoWordpressVm -vm $vm -password 'Pa$$word'
@@ -25,4 +25,4 @@ Update-AzureDemoWordpressVm -vm $vm -password 'Pa$$word'
 Get-AzureVMDscExtensionStatus -VM $vm
 
 # Open the web site
-Start-Process "$($vm.DNSName)"
+Write-Host "$($vm.DNSName)"

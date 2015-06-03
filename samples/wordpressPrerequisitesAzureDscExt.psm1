@@ -79,29 +79,6 @@ Configuration WordPress
             DatabaseName = 'WordPress'
             UserCredential =  $wordPressUser
         }
-        
-        if(!$skipWordpress)
-        {
-            # Make sure the IIS site for WordPress is created
-            # Note, you still need to create the actuall WordPress Site after this.
-            xIisWordPressSite iisWordPressSite
-            {
-                DestinationPath = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.Path)
-                DownloadUri = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.DownloadURI)
-                PackageFolder = $ExecutionContext.InvokeCommand.ExpandString($Node.PackageFolder)
-                Configuration = $WordPressConfig
-            }
-
-        
-            # Make sure the WordPress site is present
-            xWordPressSite WordPressSite
-            {
-                Uri = $ExecutionContext.InvokeCommand.ExpandString($Node.WordPress.Uri)
-                Title = $Node.WordPress.Title
-                AdministratorCredential = $Admin
-                AdministratorEmail = $Node.WordPress.Email
-            }
-        } 
 
         # Make sure LCM will reboot if needed
         LocalConfigurationManager

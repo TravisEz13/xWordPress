@@ -63,13 +63,14 @@ Param(
 
 
     Write-Verbose -Message 'Creating Zip ....' -Verbose
-    $zip = &$PSScriptRoot\CreateSingleNodeEndToEndZip.ps1 -xWordPressFolder ((Resolve-Path $PSScriptRoot\..\..).ProviderPath)
     if($configuration -ieq 'Provision')
     {
+        $zip = &$PSScriptRoot\CreateSingleNodeEndToEndZip.ps1 -xWordPressFolder ((Resolve-Path $PSScriptRoot\..\..).ProviderPath)
         $skip = $true
     }
     else
     {
+        $zip = &$PSScriptRoot\CreatePrerequisitesZip.ps1 -xWordPressFolder ((Resolve-Path $PSScriptRoot\..\..).ProviderPath)
         $skip = $false
     }
 
@@ -93,7 +94,6 @@ Param(
             admin = $administrator
             wordPressUser = $user
             Credential = $administrator
-            skipWordpress = $skip
         } -ConfigurationArchive $zipName -ConfigurationName WordPress -ConfigurationDataPath "$PSScriptRoot\..\wordpressdemoAzureDscExt.psd1"  -Verbose
 
     Write-Verbose -Message 'Updating VM ....' -Verbose
