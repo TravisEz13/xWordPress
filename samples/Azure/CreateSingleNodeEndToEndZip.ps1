@@ -35,9 +35,9 @@ function Get-Repo
 # clone and copy files to temp folders
 Get-Repo -resourceToClone 'xPsDesiredStateConfiguration'
 Get-Repo -resourceToClone 'xMySql'
-#Get-Repo -resourceToClone 'xWebAdministration'
+Get-Repo -resourceToClone 'xWebAdministration'
 Get-Repo -resourceToClone 'xPhp' -branch 'dev'
-copy-item 'C:\Users\tplunk\Desktop\old\wordpressdemo\xWebAdministration' "$tempFolder\xWebAdministration" -recurse
+#copy-item 'C:\Users\tplunk\Desktop\old\wordpressdemo\xWebAdministration' "$tempFolder\xWebAdministration" -recurse
 
 copy-item $xWordpressFolder "$tempFolder\xWordPress" -recurse
 Remove-Item -Recurse -Force "$tempFolder\xWordPress\.git"
