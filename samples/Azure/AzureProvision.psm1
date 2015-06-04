@@ -1,3 +1,89 @@
+Function Update-AzureDemoWordPressVm
+{
+[cmdletbinding()]
+Param(
+    [Parameter(Mandatory=$true)]
+    [Microsoft.WindowsAzure.Commands.ServiceManagement.Model.PersistentVMRoleListContext]
+    $vm,
+    [Parameter(Mandatory=$true)]
+    [string]
+    $password,
+
+    [ValidateSet('Provision','Prepare')]
+    $configuration = 'Provision'
+
+
+    )    
+
+    # Create Zip
+    Write-Verbose -Message '**************************' -Verbose
+    Write-Verbose -Message 'Creating Zip ....' -Verbose
+    $zip = New-ConfigurationZip -Configuration $configuration
+
+    $zipName = split-path -Leaf $zip
+    # Publish Zip
+    Write-Verbose -Message '**************************' -Verbose
+    Write-Verbose -Message 'Publishing Zip ....' -Verbose
+    Publish-AzureVMDscConfiguration -ConfigurationPath $zip -Force  -Verbose
+
+    # Create Parameters
+    $securePassword = $password | ConvertTo-SecureString -AsPlainText -Force
+    $secureDbUserPassword = 'pass@word1' | ConvertTo-SecureString -AsPlainText -Force
+    $administrator = New-Object System.Management.Automation.PSCredential 'administrator',$securePassword
+    $user = New-Object System.Management.Automation.PSCredential 'WordPressUser',$secureDbUserPassword
+
+    Write-Verbose -Message 'Setting Extension ....' -Verbose
+    # Open Port
+    $port = $vm |Get-AzureEndpoint -Name http
+    if(!$port)
+    {
+        $vm | Add-AzureEndpoint -LocalPort 80 -PublicPort 80 -Name HTTP -Protocol TCP
+    }
+    # Set Extension
+    Set-AzureVMDscExtension -VM $vm -ConfigurationArgument @{
+            fqdn=(([uri]$vm.DNSName).Host)
+            admin = $administrator
+            wordPressUser = $user
+            Credential = $administrator
+        } -ConfigurationArchive $zipName -ConfigurationName WordPress -ConfigurationDataPath "$PSScriptRoot\..\wordpressdemoAzureDscExt.psd1"  -Verbose
+
+    # Update VM
+    Write-Verbose -Message '**************************' -Verbose
+    Write-Verbose -Message 'Updating VM ....' -Verbose
+    $vm|Update-AzureVM
+    Write-Verbose -Message 'Done!' -Verbose
+}
+
+function Wait-AzureVmDscExtension
+{
+[cmdletbinding()]
+Param(
+    [Parameter(Mandatory=$true)]
+    [Microsoft.WindowsAzure.Commands.ServiceManagement.Model.PersistentVMRoleListContext]
+    $vm,
+    [DateTime] $startingTime = [datetime]::MinValue
+    )
+    $extensionDoneStatusCodes = @( 1,7,8)
+    $status = $null
+    while (-not $status -or $status.StatusCode -notin $extensionDoneStatusCodes -or $status.TimeStamp -lt $startingTime )
+    { 
+        $status = Get-AzureVMDscExtensionStatus -VM $vm
+        if($status.StatusCode -notin $extensionDoneStatusCodes -or $status.TimeStamp -lt $startingTime )
+        {
+            if($status.TimeStamp -lt $startingTime)
+            {
+                Write-Verbose -Verbose 'Status is stale, Refreshing...'
+            }
+            else
+            {
+                Write-Verbose -Verbose "Refreshing Status: $($Status.StatusCode) - $($Status.StatusMessage)"
+            }
+            Start-Sleep -Seconds 45
+        }
+    }
+    
+    return $status
+}
 Function New-AzureDemoVm
 {
 [cmdletbinding()]
@@ -44,64 +130,29 @@ Param(
     return $vm
 }
 
-Function Update-AzureDemoWordPressVm
+function Get-AzureDemoVm
 {
-[cmdletbinding()]
-Param(
-    [Parameter(Mandatory=$true)]
-    [Microsoft.WindowsAzure.Commands.ServiceManagement.Model.PersistentVMRoleListContext]
-    $vm,
-    [Parameter(Mandatory=$true)]
-    [string]
-    $password,
+    return Get-AzureVm | Where-Object{$_.Name -like 'tplunk*'} | Out-GridView -Title 'Select VM' -OutputMode Single
+}
 
-    [ValidateSet('Provision','Prepare')]
-    $configuration = 'Provision'
-
-
-    )    
-
-
-    Write-Verbose -Message 'Creating Zip ....' -Verbose
+function New-ConfigurationZip
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true, Position=0, HelpMessage='Please add a help message here')]
+        [Object]
+        $Configuration
+    )
+    
+    
     if($configuration -ieq 'Provision')
     {
         $zip = &$PSScriptRoot\CreateSingleNodeEndToEndZip.ps1 -xWordPressFolder ((Resolve-Path $PSScriptRoot\..\..).ProviderPath)
-        $skip = $true
     }
     else
     {
         $zip = &$PSScriptRoot\CreatePrerequisitesZip.ps1 -xWordPressFolder ((Resolve-Path $PSScriptRoot\..\..).ProviderPath)
-        $skip = $false
     }
-
-    $zipName = split-path -Leaf $zip
-    Write-Verbose -Message 'Publishing Zip ....' -Verbose
-    Publish-AzureVMDscConfiguration -ConfigurationPath $zip -Force  -Verbose
-
-    $securePassword = $password | ConvertTo-SecureString -AsPlainText -Force
-    $secureDbUserPassword = 'pass@word1' | ConvertTo-SecureString -AsPlainText -Force
-    $administrator = New-Object System.Management.Automation.PSCredential 'administrator',$securePassword
-    $user = New-Object System.Management.Automation.PSCredential 'WordPressUser',$secureDbUserPassword
-
-    Write-Verbose -Message 'Setting Extension ....' -Verbose
-    $port = $vm |Get-AzureEndpoint -Name http
-    if(!$port)
-    {
-        $vm | Add-AzureEndpoint -LocalPort 80 -PublicPort 80 -Name HTTP -Protocol TCP
-    }
-    Set-AzureVMDscExtension -VM $vm -ConfigurationArgument @{
-            fqdn=(([uri]$vm.DNSName).Host)
-            admin = $administrator
-            wordPressUser = $user
-            Credential = $administrator
-        } -ConfigurationArchive $zipName -ConfigurationName WordPress -ConfigurationDataPath "$PSScriptRoot\..\wordpressdemoAzureDscExt.psd1"  -Verbose
-
-    Write-Verbose -Message 'Updating VM ....' -Verbose
-    $vm|Update-AzureVM
-    Write-Verbose -Message 'Done!' -Verbose
-}
-
-function Get-AzureDemoVm
-{
-    return Get-AzureVm | Where-Object{$_.Name -like 'tplunk*'} | Out-GridView -Title 'Select VM' -OutputMode Single
+    return $zip
 }
